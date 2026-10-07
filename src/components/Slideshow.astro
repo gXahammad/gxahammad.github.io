@@ -1,0 +1,212 @@
+---
+import Arrow from './Arrow.astro';
+import Img from './Img.astro';
+import { getSite, type HomeSection, type Project } from '../lib/content';
+import { url } from '../lib/utils';
+
+type SlideshowSection = Extract<HomeSection, { type: 'slideshow' }>;
+
+interface Props {
+  section: SlideshowSection;
+  projects: Project[];
+}
+
+const { section, projects } = Astro.props;
+const site = getSite();
+
+// A slide linked to a project borrows that project's image, title and details
+// for any field left empty.
+const slides = section.slides
+  .map((slide) => {
+    const project = projects.find((p) => p.slug === slide.project);
+    return {
+      image: slide.image || project?.cover || '',
+      alt: slide.alt || project?.coverAlt || slide.title || project?.title || '',
+      title: slide.title || project?.title || '',
+      caption: slide.caption || (project ? [project.location, project.year].filter(Boolean).join(', ') : ''),
+      href: project ? url(`/work/${project.slug}/`) : '',
+    };
+  })
+  .filter((slide) => slide.image);
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const first = slides[0];
+---
+
+{
+  first && (
+    <section class="wrap slideshow" data-slideshow data-interval={section.interval * 1000} aria-roledescription="carousel">
+      <div class={`slideshow__frame slideshow__frame--${section.height} media`}>
+        {slides.map((slide, i) => (
+          <div
+            class:list={['slide', { 'is-active': i === 0 }]}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${i + 1} / ${slides.length}`}
+            aria-hidden={i === 0 ? undefined : 'true'}
+            data-title={slide.title}
+            data-caption={slide.caption}
+            data-href={slide.href}
+          >
+            {slide.href ? (
+              <a href={slide.href} tabindex={i === 0 ? undefined : -1}>
+                <Img src={slide.image} alt={slide.alt} sizes="(min-width: 1920px) 1824px, 94vw" priority={i === 0} />
+              </a>
+            ) : (
+              <Img src={slide.image} alt={slide.alt} sizes="(min-width: 1920px) 1824px, 94vw" priority={i === 0} />
+            )}
+          </div>
+        ))}
+      </div>
+      <div class="slideshow__track" aria-hidden="true">
+        <span class="slideshow__progress"></span>
+      </div>
+      <div class="slideshow__bar">
+        <p class="slideshow__caption" aria-live="polite">
+          {slides.length > 1 && (
+            <span class="slideshow__count tabular" data-slide-count>
+              {pad(1)} / {pad(slides.length)}
+            </span>
+          )}
+          <a class="slideshow__title" href={first.href || undefined} data-slide-title>
+            {first.title}
+          </a>
+          <span class="slideshow__sub" data-slide-caption>
+            {first.caption}
+          </span>
+        </p>
+        {slides.length > 1 && (
+          <div class="slideshow__controls">
+            <button
+              type="button"
+              class="slideshow__toggle"
+              aria-label={site.labels.pause}
+              data-toggle
+              data-label-pause={site.labels.pause}
+              data-label-play={site.labels.play}
+            >
+              <svg class="icon-pause" width="0.8em" height="0.8em" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4.5 2.5v11M11.5 2.5v11" stroke="currentColor" stroke-width="1.6" fill="none"></path>
+              </svg>
+              <svg class="icon-play" width="0.8em" height="0.8em" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4 2.2 13.5 8 4 13.8Z" fill="currentColor"></path>
+              </svg>
+            </button>
+            <button type="button" aria-label={site.labels.previous} data-prev>
+              <Arrow dir="left" />
+            </button>
+            <button type="button" aria-label={site.labels.next} data-next>
+              <Arrow dir="right" />
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+<script>
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-slideshow]')) {
+    const slides = [...root.querySelectorAll<HTMLElement>('.slide')];
+    if (slides.length < 2) {
+      root.querySelector('.slideshow__track')?.remove();
+      continue;
+    }
+
+    const count = root.querySelector<HTMLElement>('[data-slide-count]');
+    const title = root.querySelector<HTMLAnchorElement>('[data-slide-title]');
+    const sub = root.querySelector<HTMLElement>('[data-slide-caption]');
+    const progress = root.querySelector<HTMLElement>('.slideshow__progress');
+    const interval = Number(root.dataset.interval) || 6000;
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    const toggle = root.querySelector<HTMLButtonElement>('[data-toggle]');
+
+    let index = 0;
+    let timer: number | undefined;
+    let paused = false; // while the pointer or keyboard focus is on the slideshow
+    let stopped = false; // after the visitor presses the pause button
+
+    const restartProgress = () => {
+      if (!progress) return;
+      progress.style.animation = 'none';
+      void progress.offsetWidth;
+      progress.style.animation = paused || stopped || reduceMotion ? 'none' : `slideshow-progress ${interval}ms linear forwards`;
+    };
+
+    const show = (next: number) => {
+      index = (next + slides.length) % slides.length;
+      slides.forEach((slide, i) => {
+        const active = i === index;
+        slide.classList.toggle('is-active', active);
+        if (active) slide.removeAttribute('aria-hidden');
+        else slide.setAttribute('aria-hidden', 'true');
+        slide.querySelector('a')?.setAttribute('tabindex', active ? '0' : '-1');
+      });
+      const slide = slides[index];
+      if (count) count.textContent = `${pad(index + 1)} / ${pad(slides.length)}`;
+      if (title) {
+        title.textContent = slide.dataset.title ?? '';
+        if (slide.dataset.href) title.href = slide.dataset.href;
+        else title.removeAttribute('href');
+      }
+      if (sub) sub.textContent = slide.dataset.caption ?? '';
+      restartProgress();
+    };
+
+    const stop = () => window.clearTimeout(timer);
+    const play = () => {
+      stop();
+      if (reduceMotion || paused || stopped || document.hidden) return;
+      timer = window.setTimeout(() => {
+        show(index + 1);
+        play();
+      }, interval);
+    };
+    const go = (step: number) => {
+      show(index + step);
+      play();
+    };
+    const pause = (value: boolean) => {
+      paused = value;
+      restartProgress();
+      play();
+    };
+
+    if (toggle) {
+      toggle.hidden = reduceMotion;
+      toggle.addEventListener('click', () => {
+        stopped = !stopped;
+        toggle.classList.toggle('is-stopped', stopped);
+        toggle.setAttribute('aria-label', (stopped ? toggle.dataset.labelPlay : toggle.dataset.labelPause) ?? '');
+        restartProgress();
+        play();
+      });
+    }
+    root.querySelector('[data-next]')?.addEventListener('click', () => go(1));
+    root.querySelector('[data-prev]')?.addEventListener('click', () => go(-1));
+    root.addEventListener('mouseenter', () => pause(true));
+    root.addEventListener('mouseleave', () => pause(false));
+    root.addEventListener('focusin', () => pause(true));
+    root.addEventListener('focusout', (event) => {
+      if (!root.contains(event.relatedTarget as Node | null)) pause(false);
+    });
+    root.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') go(1);
+      if (event.key === 'ArrowLeft') go(-1);
+    });
+    document.addEventListener('visibilitychange', play);
+
+    let startX = 0;
+    root.addEventListener('touchstart', (event) => (startX = event.touches[0].clientX), { passive: true });
+    root.addEventListener('touchend', (event) => {
+      const dx = event.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+    });
+
+    show(0);
+    play();
+  }
+</script>

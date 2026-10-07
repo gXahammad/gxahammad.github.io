@@ -1,0 +1,42 @@
+---
+// Responsive image for anything uploaded in the editor. Uploaded photos are
+// resized into several widths (WebP); other files and external links are shown as-is.
+import { Image } from 'astro:assets';
+import { dimensions, fileUrl, localImage } from '../lib/media';
+
+interface Props {
+  src?: string | null;
+  alt?: string;
+  /** How wide the image appears on screen, e.g. "(min-width: 1100px) 30vw, 92vw". */
+  sizes?: string;
+  widths?: number[];
+  /** Load immediately (for the first image on a page). */
+  priority?: boolean;
+  class?: string;
+}
+
+const {
+  src,
+  alt = '',
+  sizes = '100vw',
+  widths = [480, 800, 1200, 1600, 2000, 2600],
+  priority = false,
+  class: className,
+} = Astro.props;
+
+const meta = localImage(src);
+let candidates: number[] = [];
+if (meta) {
+  const { width } = dimensions(meta);
+  candidates = widths.filter((w) => w < width);
+  if (width <= Math.max(...widths) || candidates.length === 0) candidates.push(width);
+}
+---
+
+{
+  meta ? (
+    <Image src={meta} alt={alt} widths={candidates} sizes={sizes} quality={80} priority={priority} class={className} />
+  ) : src ? (
+    <img src={fileUrl(src)} alt={alt} class={className} loading={priority ? 'eager' : 'lazy'} decoding="async" />
+  ) : null
+}

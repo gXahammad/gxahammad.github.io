@@ -1,0 +1,82 @@
+---
+import '@fontsource-variable/inter-tight';
+import '@fontsource-variable/newsreader/wght.css';
+import '@fontsource-variable/newsreader/wght-italic.css';
+import '../styles/global.css';
+import '../styles/pages.css';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { getSite } from '../lib/content';
+import { imageAt } from '../lib/media';
+import { url } from '../lib/utils';
+
+interface Props {
+  /** Page name; shown as "Page — Your Name" in the browser tab. */
+  title?: string;
+  /** Replaces the whole browser-tab title (used by the home page). */
+  fullTitle?: string;
+  description?: string;
+  /** Image for link previews (WhatsApp, LinkedIn…). Falls back to the site default. */
+  image?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, fullTitle, description, image, type = 'website', noindex = false, jsonLd } = Astro.props;
+const site = getSite();
+
+const defaultTitle = site.role ? `${site.name} — ${site.role}` : site.name;
+const pageTitle = fullTitle || (title ? `${title} — ${site.name}` : defaultTitle);
+const pageDescription = (description || site.description).replace(/\s+/g, ' ').trim().slice(0, 300);
+const canonical = new URL(Astro.url.pathname, Astro.site);
+
+const share = await imageAt(image || site.shareImage, 1200, { height: 630, format: 'jpeg' });
+const shareUrl = share ? new URL(share.src, Astro.site).href : null;
+const icon = site.favicon ? await imageAt(site.favicon, 64, { height: 64, format: 'png' }) : null;
+const touchIcon = site.favicon ? await imageAt(site.favicon, 180, { height: 180, format: 'png' }) : null;
+const structuredData = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+    <title>{pageTitle}</title>
+    {pageDescription && <meta name="description" content={pageDescription} />}
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={pageTitle} />
+    {pageDescription && <meta property="og:description" content={pageDescription} />}
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={site.name} />
+    {shareUrl && <meta property="og:image" content={shareUrl} />}
+    {shareUrl && share?.width ? <meta property="og:image:width" content={String(share.width)} /> : null}
+    {shareUrl && share?.height ? <meta property="og:image:height" content={String(share.height)} /> : null}
+    <meta name="twitter:card" content={shareUrl ? 'summary_large_image' : 'summary'} />
+
+    {icon ? <link rel="icon" type="image/png" href={icon.src} /> : <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />}
+    <link rel="apple-touch-icon" href={touchIcon ? touchIcon.src : url('/apple-touch-icon.png')} />
+    <link rel="sitemap" href={url('/sitemap-index.xml')} />
+    {structuredData && <script type="application/ld+json" set:html={structuredData} />}
+  </head>
+  <body id="top">
+    <a class="skip" href="#main">{site.labels.skip}</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      import '../scripts/site';
+    </script>
+  </body>
+</html>

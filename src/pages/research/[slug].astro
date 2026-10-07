@@ -1,0 +1,146 @@
+---
+import Arrow from '../../components/Arrow.astro';
+import Img from '../../components/Img.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import Base from '../../layouts/Base.astro';
+import { getResearch, getResearchPage, getSite, type Research } from '../../lib/content';
+import { renderMarkdown } from '../../lib/markdown';
+import { fileUrl } from '../../lib/media';
+import { slugify, url } from '../../lib/utils';
+
+export async function getStaticPaths() {
+  const entries = await getResearch();
+  return entries.map((entry, i) => ({
+    params: { slug: entry.slug },
+    props: { entry, next: entries.length > 1 ? entries[(i + 1) % entries.length] : null },
+  }));
+}
+
+interface Props {
+  entry: Research;
+  next: Research | null;
+}
+
+const { entry: r, next } = Astro.props;
+const site = getSite();
+const page = getResearchPage();
+const L = page.labels;
+const body = await renderMarkdown(r.body);
+
+const details = [
+  [L.authors, r.authors],
+  [L.publication, r.publication],
+  [L.type, r.type],
+  [L.year, r.year],
+].filter(([, value]) => value);
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': r.type.toLowerCase().includes('thesis') ? 'Thesis' : 'ScholarlyArticle',
+  name: r.title,
+  ...(r.summary && { abstract: r.summary }),
+  ...(r.year && { datePublished: r.year }),
+  author: r.authors ? r.authors.split(/,|;| and /).map((name) => ({ '@type': 'Person', name: name.trim() })) : { '@type': 'Person', name: site.name },
+  ...(r.publication && { publisher: r.publication }),
+  url: new URL(Astro.url.pathname, Astro.site).href,
+};
+---
+
+<Base title={r.title} description={r.summary} image={r.cover} type="article" jsonLd={article}>
+  <article class="wrap research-entry">
+    <header class="research-entry__head">
+      <p class="crumbs">
+        <a href={url('/research/')}>{page.title}</a>
+        {
+          (r.type || r.year) && (
+            <>
+              <span aria-hidden="true">/</span>
+              <span>
+                {r.type && (
+                  <a class="crumbs__sub" href={url(`/research/?type=${slugify(r.type)}`)}>
+                    {r.type}
+                  </a>
+                )}
+                {r.type && r.year && ', '}
+                {r.year}
+              </span>
+            </>
+          )
+        }
+      </p>
+      <h1 class="display-2 research-entry__title">{r.title}</h1>
+    </header>
+
+    <div class="grid research-entry__body">
+      <aside class="research-entry__aside">
+        {
+          r.cover && (
+            <figure class="media research-entry__cover" data-zoom data-caption="">
+              <Img src={r.cover} alt={r.coverAlt} sizes="(min-width: 900px) 28vw, 94vw" widths={[400, 640, 900, 1200]} priority />
+            </figure>
+          )
+        }
+        {
+          details.length > 0 && (
+            <dl class="research-entry__details">
+              {details.map(([label, value]) => (
+                <div class="fact">
+                  <dt class="eyebrow">{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )
+        }
+        {
+          (r.pdf || r.link) && (
+            <div class="research-entry__actions">
+              {r.pdf && (
+                <a class="button" href={fileUrl(r.pdf)} target="_blank" rel="noopener">
+                  {L.pdf}
+                  <Arrow dir="up-right" />
+                </a>
+              )}
+              {r.link && (
+                <a class="arrow-link" href={r.link} target="_blank" rel="noopener">
+                  {L.link}
+                  <Arrow dir="up-right" />
+                </a>
+              )}
+            </div>
+          )
+        }
+      </aside>
+
+      <div class="research-entry__main">
+        {
+          r.summary && (
+            <section class="research-entry__abstract">
+              <h2 class="eyebrow">{L.abstract}</h2>
+              <p class="lead">{r.summary}</p>
+            </section>
+          )
+        }
+        {body && <div class="prose" set:html={body} />}
+      </div>
+    </div>
+
+    <nav class="project-nav" aria-label={L.back}>
+      {
+        next && (
+          <a class="next-project next-project--text" href={url(`/research/${next.slug}/`)}>
+            <span class="next-project__text">
+              <span class="eyebrow">{[next.type, next.year].filter(Boolean).join(', ')}</span>
+              <span class="display-2 next-project__title">{next.title}</span>
+            </span>
+          </a>
+        )
+      }
+      <a class="arrow-link project-nav__back" href={url('/research/')}>
+        <Arrow dir="left" />
+        {L.back}
+      </a>
+    </nav>
+  </article>
+  <Lightbox />
+</Base>

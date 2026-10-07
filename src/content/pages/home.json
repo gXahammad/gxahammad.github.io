@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "type": "slideshow",
+      "slides": [
+        {
+          "project": "courtyard-house",
+          "image": "",
+          "alt": "",
+          "title": "",
+          "caption": ""
+        },
+        {
+          "project": "brick-library",
+          "image": "",
+          "alt": "",
+          "title": "",
+          "caption": ""
+        },
+        {
+          "project": "river-pavilion",
+          "image": "",
+          "alt": "",
+          "title": "",
+          "caption": ""
+        },
+        {
+          "project": "urban-terraces",
+          "image": "",
+          "alt": "",
+          "title": "",
+          "caption": ""
+        }
+      ],
+      "interval": 6,
+      "height": "large"
+    },
+    {
+      "type": "statement",
+      "text": "Golam Ahammad Sunny is an architect based in Dhaka. His work moves between practice and research — buildings, drawings and writing about climate, material and everyday life.",
+      "button_label": "About",
+      "button_link": "/about"
+    },
+    {
+      "type": "projects",
+      "heading": "Selected work",
+      "selection": [],
+      "limit": 4,
+      "layout": "staggered",
+      "link_label": "All work"
+    },
+    {
+      "type": "research",
+      "heading": "Research & writing",
+      "selection": [],
+      "limit": 3,
+      "link_label": "All research"
+    },
+    {
+      "type": "contact",
+      "heading": "Open to commissions, collaborations and conversations about architecture.",
+      "text": "",
+      "button_label": "Get in touch",
+      "button_link": "/contact"
+    }
+  ],
+  "seo_title": "",
+  "seo_description": ""
+}

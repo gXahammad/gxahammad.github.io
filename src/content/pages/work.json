@@ -1,0 +1,44 @@
+{
+  "title": "Work",
+  "intro": "Selected architectural, academic and competition projects.",
+  "categories": [
+    {
+      "name": "Residential"
+    },
+    {
+      "name": "Housing"
+    },
+    {
+      "name": "Cultural"
+    },
+    {
+      "name": "Educational"
+    },
+    {
+      "name": "Academic"
+    },
+    {
+      "name": "Competition"
+    }
+  ],
+  "show_filters": true,
+  "default_view": "grid",
+  "labels": {
+    "all": "All",
+    "grid": "Grid",
+    "index": "Index",
+    "empty": "Projects will appear here soon.",
+    "col_title": "Project",
+    "col_category": "Category",
+    "col_location": "Location",
+    "col_year": "Year",
+    "location": "Location",
+    "year": "Year",
+    "status": "Status",
+    "category": "Category",
+    "links": "Links",
+    "next": "Next project",
+    "back": "All work"
+  },
+  "seo_description": ""
+}

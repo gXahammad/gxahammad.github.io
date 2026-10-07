@@ -1,0 +1,87 @@
+---
+import Img from './Img.astro';
+import { getNavigation, getSite } from '../lib/content';
+import { pagePath, telHref, url } from '../lib/utils';
+
+const site = getSite();
+const nav = getNavigation();
+const current = pagePath(Astro.url.pathname);
+
+const isCurrent = (href: string) =>
+  href === '/' ? current === '/' : href.startsWith('/') && current.startsWith(href.replace(/\/?$/, '/'));
+const linkAttrs = (external: boolean) => (external ? { target: '_blank', rel: 'noopener' } : {});
+---
+
+<header class="site-header" data-header>
+  <div class="wrap site-header__bar">
+    <a href={url('/')} class="wordmark">
+      {
+        site.logo ? (
+          <Img src={site.logo} alt={site.name} sizes="240px" widths={[240, 480]} priority />
+        ) : (
+          <>
+            <span class="wordmark__name">{site.headerText}</span>
+            {site.role && <span class="wordmark__role">{site.role}</span>}
+          </>
+        )
+      }
+    </a>
+    {
+      nav.length > 0 && (
+        <nav class="site-nav" aria-label="Main">
+          <ul>
+            {nav.map((item) => (
+              <li>
+                <a href={url(item.href)} aria-current={isCurrent(item.href) ? 'page' : undefined} {...linkAttrs(item.external)}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+    {
+      nav.length > 0 && (
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-open>
+          {site.labels.menu}
+        </button>
+      )
+    }
+  </div>
+</header>
+
+{
+  nav.length > 0 && (
+    <div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label={site.labels.menu} data-menu>
+      <div class="mobile-menu__bar">
+        <a href={url('/')} class="wordmark">
+          {site.headerText}
+        </a>
+        <button class="menu-toggle" type="button" data-menu-close>
+          {site.labels.close}
+        </button>
+      </div>
+      <nav aria-label="Mobile">
+        <ul class="mobile-menu__links">
+          {nav.map((item) => (
+            <li>
+              <a href={url(item.href)} aria-current={isCurrent(item.href) ? 'page' : undefined} {...linkAttrs(item.external)}>
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div class="mobile-menu__foot">
+        {site.email && <a href={`mailto:${site.email}`}>{site.email}</a>}
+        {site.phone && <a href={telHref(site.phone)}>{site.phone}</a>}
+        {site.social.map((link) => (
+          <a href={link.url} target="_blank" rel="noopener">
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}

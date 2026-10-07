@@ -1,0 +1,20 @@
+---
+import Arrow from '../components/Arrow.astro';
+import Base from '../layouts/Base.astro';
+import { getNotFoundPage } from '../lib/content';
+import { url } from '../lib/utils';
+
+const page = getNotFoundPage();
+---
+
+<Base title={page.title} noindex>
+  <section class="wrap not-found">
+    <p class="eyebrow">404</p>
+    <h1 class="display not-found__title">{page.title}</h1>
+    {page.text && <p class="lead not-found__text">{page.text}</p>}
+    <a class="button" href={url('/')}>
+      <Arrow dir="left" />
+      {page.buttonLabel}
+    </a>
+  </section>
+</Base>

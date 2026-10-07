@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "label": "Work",
+      "page": "work",
+      "url": ""
+    },
+    {
+      "label": "Research",
+      "page": "research",
+      "url": ""
+    },
+    {
+      "label": "About",
+      "page": "about",
+      "url": ""
+    },
+    {
+      "label": "Contact",
+      "page": "contact",
+      "url": ""
+    }
+  ]
+}

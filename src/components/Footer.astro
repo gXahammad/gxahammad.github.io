@@ -1,0 +1,44 @@
+---
+import Arrow from './Arrow.astro';
+import { getSite } from '../lib/content';
+import { telHref } from '../lib/utils';
+
+const site = getSite();
+---
+
+<footer class="site-footer">
+  <div class="wrap site-footer__grid">
+    <div class="site-footer__id">
+      <p class="site-footer__name">{site.name}</p>
+      {(site.role || site.location) && <p class="meta">{[site.role, site.location].filter(Boolean).join(', ')}</p>}
+    </div>
+    <div class="site-footer__contact">
+      {site.email && <a href={`mailto:${site.email}`}>{site.email}</a>}
+      {site.phone && <a href={telHref(site.phone)}>{site.phone}</a>}
+      {site.address && <p class="meta pre-line">{site.address}</p>}
+    </div>
+    {
+      site.social.length > 0 && (
+        <ul class="site-footer__social">
+          {site.social.map((link) => (
+            <li>
+              <a href={link.url} target="_blank" rel="noopener">
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+    <div class="site-footer__bottom">
+      <div>
+        <p>{site.copyright}</p>
+        {site.footerText && <p class="site-footer__note pre-line">{site.footerText}</p>}
+      </div>
+      <a href="#top" class="arrow-link">
+        {site.labels.back_to_top}
+        <Arrow dir="up" />
+      </a>
+    </div>
+  </div>
+</footer>

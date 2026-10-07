@@ -1,0 +1,96 @@
+---
+import Arrow from '../components/Arrow.astro';
+import Img from '../components/Img.astro';
+import Base from '../layouts/Base.astro';
+import { getAboutPage, getSite } from '../lib/content';
+import { renderMarkdown } from '../lib/markdown';
+import { fileUrl, imageAt } from '../lib/media';
+import { url } from '../lib/utils';
+
+const site = getSite();
+const page = getAboutPage();
+const bio = await renderMarkdown(page.bio);
+
+const portrait = await imageAt(page.portrait, 800);
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  ...(site.role && { jobTitle: site.role }),
+  url: new URL(url('/'), Astro.site).href,
+  ...(portrait && { image: new URL(portrait.src, Astro.site).href }),
+  ...(site.social.length && { sameAs: site.social.map((link) => link.url) }),
+};
+---
+
+<Base title={page.title} description={page.seoDescription || page.heading} image={page.portrait} jsonLd={person}>
+  <section class="wrap grid about-intro">
+    {
+      page.portrait && (
+        <figure class="about-intro__portrait">
+          <div class="media media--cover about-intro__frame">
+            <Img src={page.portrait} alt={page.portraitAlt || site.name} sizes="(min-width: 900px) 38vw, 94vw" widths={[480, 800, 1200, 1600]} priority />
+          </div>
+          {page.portraitCaption && <figcaption class="caption">{page.portraitCaption}</figcaption>}
+        </figure>
+      )
+    }
+    <div class:list={['about-intro__text', { 'about-intro__text--full': !page.portrait }]}>
+      <h1 class="eyebrow about-intro__title">{page.title}</h1>
+      {page.heading && <p class="display-2 about-intro__heading">{page.heading}</p>}
+      {bio && <div class="prose about-intro__bio" set:html={bio} />}
+      {
+        page.cvFile && (
+          <a class="button about-intro__cv" href={fileUrl(page.cvFile)} target="_blank" rel="noopener">
+            {page.cvLabel}
+            <Arrow dir="down" />
+          </a>
+        )
+      }
+    </div>
+  </section>
+
+  {
+    (page.sections.length > 0 || page.skills.length > 0) && (
+      <div class="wrap cv">
+        {page.sections.map((section) => (
+          <section class="grid cv-section">
+            <h2 class="cv-section__title">{section.title}</h2>
+            <ol class="cv-section__entries">
+              {section.entries.map((entry) => (
+                <li class="cv-entry reveal">
+                  <span class="cv-entry__period tabular">{entry.period}</span>
+                  <div class="cv-entry__text">
+                    <p class="cv-entry__title">
+                      {entry.link ? (
+                        <a class="underline" href={entry.link} target="_blank" rel="noopener">
+                          {entry.title}
+                        </a>
+                      ) : (
+                        entry.title
+                      )}
+                    </p>
+                    {(entry.subtitle || entry.location) && (
+                      <p class="cv-entry__sub">{[entry.subtitle, entry.location].filter(Boolean).join(', ')}</p>
+                    )}
+                    {entry.description && <p class="cv-entry__desc pre-line">{entry.description}</p>}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
+        {page.skills.map((group) => (
+          <section class="grid cv-section">
+            <h2 class="cv-section__title">{group.title}</h2>
+            <ul class="cv-section__entries skill-list reveal">
+              {group.items.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    )
+  }
+</Base>

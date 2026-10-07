@@ -1,0 +1,25 @@
+{
+  "title": "Contact",
+  "heading": "Let's talk about a project, a collaboration or an idea.",
+  "intro": "For commissions, collaborations, teaching or research, write to me — I usually reply within a few days.",
+  "image": "",
+  "image_alt": "",
+  "labels": {
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "social": "Elsewhere"
+  },
+  "form": {
+    "enabled": false,
+    "endpoint": "",
+    "heading": "Send a message",
+    "name_label": "Name",
+    "email_label": "Email",
+    "message_label": "Message",
+    "submit_label": "Send",
+    "success_message": "Thank you — your message has been sent.",
+    "error_message": "Sorry, something went wrong. Please email me directly."
+  },
+  "seo_description": ""
+}

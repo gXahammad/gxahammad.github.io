@@ -1,0 +1,24 @@
+---
+import Arrow from './Arrow.astro';
+import type { Research } from '../lib/content';
+import { slugify, url } from '../lib/utils';
+
+interface Props {
+  entry: Research;
+}
+
+const { entry: r } = Astro.props;
+const meta = [r.authors, r.publication].filter(Boolean).join(' · ');
+---
+
+<li data-type={slugify(r.type) || 'other'}>
+  <a class="research-row reveal" href={url(`/research/${r.slug}/`)}>
+    <span class="research-row__year tabular">{r.year}</span>
+    <span class="research-row__main">
+      <span class="research-row__title">{r.title}</span>
+      {meta && <span class="research-row__meta">{meta}</span>}
+    </span>
+    <span class="research-row__type">{r.type}</span>
+    <span class="research-row__arrow"><Arrow /></span>
+  </a>
+</li>

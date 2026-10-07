@@ -1,0 +1,95 @@
+---
+// Full-screen viewer for every image marked with data-zoom on the page.
+import Arrow from './Arrow.astro';
+import { getSite } from '../lib/content';
+
+const site = getSite();
+---
+
+<dialog class="lightbox" aria-label="Image viewer" data-lightbox>
+  <div class="lightbox__inner">
+    <div class="lightbox__top">
+      <span class="lightbox__count tabular" data-lb-count></span>
+      <button type="button" class="lightbox__close" data-lb-close>{site.labels.close}</button>
+    </div>
+    <div class="lightbox__stage" data-lb-stage>
+      <img alt="" data-lb-img />
+      <button type="button" class="lightbox__nav lightbox__nav--prev" aria-label={site.labels.previous} data-lb-prev>
+        <Arrow dir="left" />
+      </button>
+      <button type="button" class="lightbox__nav lightbox__nav--next" aria-label={site.labels.next} data-lb-next>
+        <Arrow dir="right" />
+      </button>
+    </div>
+    <p class="lightbox__caption" data-lb-caption></p>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+  const figures = [...document.querySelectorAll<HTMLElement>('[data-zoom]')].filter((el) => el.querySelector('img'));
+
+  if (dialog && figures.length) {
+    const img = dialog.querySelector<HTMLImageElement>('[data-lb-img]')!;
+    const caption = dialog.querySelector<HTMLElement>('[data-lb-caption]')!;
+    const count = dialog.querySelector<HTMLElement>('[data-lb-count]')!;
+    const prev = dialog.querySelector<HTMLButtonElement>('[data-lb-prev]')!;
+    const next = dialog.querySelector<HTMLButtonElement>('[data-lb-next]')!;
+    let index = 0;
+
+    const show = (i: number) => {
+      index = (i + figures.length) % figures.length;
+      const source = figures[index].querySelector('img')!;
+      img.removeAttribute('srcset');
+      img.src = source.currentSrc || source.src;
+      if (source.srcset) {
+        img.srcset = source.srcset;
+        img.sizes = '100vw';
+      }
+      img.alt = source.alt;
+      caption.textContent = figures[index].dataset.caption ?? '';
+      count.textContent = figures.length > 1 ? `${index + 1} / ${figures.length}` : '';
+      prev.hidden = next.hidden = figures.length < 2;
+    };
+
+    figures.forEach((figure, i) => {
+      figure.tabIndex = 0;
+      figure.setAttribute('role', 'button');
+      figure.setAttribute('aria-haspopup', 'dialog');
+      const open = () => {
+        show(i);
+        dialog.showModal();
+      };
+      figure.addEventListener('click', (event) => {
+        if ((event.target as HTMLElement).closest('a')) return;
+        open();
+      });
+      figure.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open();
+        }
+      });
+    });
+
+    prev.addEventListener('click', () => show(index - 1));
+    next.addEventListener('click', () => show(index + 1));
+    dialog.querySelector('[data-lb-close]')?.addEventListener('click', () => dialog.close());
+    dialog.querySelector('[data-lb-stage]')?.addEventListener('click', (event) => {
+      if (event.target === event.currentTarget) dialog.close();
+    });
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') show(index + 1);
+      if (event.key === 'ArrowLeft') show(index - 1);
+    });
+
+    let startX = 0;
+    dialog.addEventListener('touchstart', (event) => (startX = event.touches[0].clientX), { passive: true });
+    dialog.addEventListener('touchend', (event) => {
+      const dx = event.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1));
+    });
+
+    dialog.addEventListener('close', () => figures[index]?.focus({ preventScroll: true }));
+  }
+</script>

@@ -1,0 +1,798 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms/schema/sveltia-cms.json
+#
+# Website editor (Sveltia CMS) — opened at https://gxahammad.github.io/admin/
+#
+# This file decides which fields the editor shows. Content is stored in
+# /src/content (text) and /src/assets/uploads (images and files); the design
+# lives in /src and is not editable from the editor.
+#
+# Every field name below must match what the website code reads in
+# /src/lib/content.ts. Rename a field in both places, or not at all.
+
+backend:
+  name: github
+  repo: gXahammad/gxahammad.github.io
+  branch: main
+  # Sign-in uses a GitHub access token for now. To offer "Sign In with GitHub"
+  # instead, deploy the small OAuth helper described in README.md (step 5),
+  # then uncomment base_url and change auth_methods to [oauth, token].
+  # base_url: https://sveltia-cms-auth.YOUR-ACCOUNT.workers.dev
+  auth_methods: [token]
+
+app_title: Website editor
+logo:
+  src: /favicon.svg
+site_url: https://gxahammad.github.io
+
+media_folder: /src/assets/uploads
+public_folder: /uploads
+
+media_libraries:
+  default:
+    config:
+      max_file_size: 26214400 # 25 MB
+      slugify_filename: true
+      transformations:
+        # Photos are converted to WebP and scaled down to 3000 px in the browser
+        # before upload, so large camera files don't bloat the site.
+        raster_image:
+          format: webp
+          quality: 88
+          width: 3000
+          height: 3000
+
+slug:
+  encoding: ascii
+  clean_accents: true
+  maxlength: 80
+
+field_defaults:
+  richtext:
+    buttons: [bold, italic, link, heading-three, bulleted-list, numbered-list, quote]
+    editor_components: [image]
+    linked_images: false
+
+collections:
+  # ---------------------------------------------------------------- Projects
+  - name: projects
+    label: Projects
+    label_singular: Project
+    icon: architecture
+    description: >-
+      Your work, in the order the website shows it. New projects are added at the
+      end; use **Reorder** to drag them into place. Turn off **Show on website**
+      to hide a project without deleting it.
+    folder: /src/content/projects
+    extension: md
+    format: yaml-frontmatter
+    create: true
+    delete: true
+    reorder: true
+    slug: '{{slug}}'
+    identifier_field: title
+    summary: "{{title}}{{published | ternary('', ' — hidden')}}"
+    thumbnail: [card_image, cover]
+    sortable_fields: [title, year, location]
+    preview_path: /work/{{slug}}/
+    view_filters:
+      - label: Hidden from website
+        field: published
+        pattern: false
+    fields:
+      - name: title
+        label: Project title
+      - name: published
+        label: Show on website
+        widget: boolean
+        default: true
+        required: false
+      - name: year
+        label: Year
+        hint: For example `2024` or `2022–2024`.
+        required: false
+      - name: location
+        label: Location
+        hint: For example `Dhaka, Bangladesh`.
+        required: false
+      - name: categories
+        label: Categories
+        widget: relation
+        collection: pages
+        file: work
+        value_field: '{{categories.*.name}}'
+        display_fields: ['{{categories.*.name}}']
+        search_fields: ['{{categories.*.name}}']
+        multiple: true
+        required: false
+        hint: Used for the filters on the Work page. Add or rename categories in **Pages → Work page**.
+      - name: status
+        label: Status
+        hint: For example `Built`, `Unbuilt`, `Academic project`, `Competition entry`, `Ongoing`.
+        required: false
+      - name: summary
+        label: Short introduction
+        widget: text
+        required: false
+        hint: One or two sentences. Shown in large type at the top of the project page and used as the description when the page is shared.
+      - name: cover
+        label: Main image
+        widget: image
+        hint: The large image at the top of the project page. Landscape images work best.
+      - name: cover_alt
+        label: Main image description
+        required: false
+        hint: Describe the image in a few words for visitors who can't see it (and for Google).
+      - name: card_image
+        label: Thumbnail image (optional)
+        widget: image
+        required: false
+        hint: Shown in the project grid instead of the main image — for example a sketch or a drawing.
+      - name: card_image_hover
+        label: Thumbnail hover image (optional)
+        widget: image
+        required: false
+        hint: Shown when a visitor moves the mouse over the thumbnail.
+      - name: facts
+        label: Project details
+        label_singular: Detail
+        widget: list
+        required: false
+        collapsed: auto
+        summary: '{{label}}: {{value}}'
+        hint: Extra facts shown next to Location and Year — client, area, team, role, supervisor, software, award…
+        fields:
+          - { name: label, label: Label, hint: 'For example `Site area`' }
+          - { name: value, label: Value, hint: 'For example `1,200 m²`' }
+      - name: body
+        label: Description
+        widget: richtext
+        required: false
+      - name: blocks
+        label: Images and content
+        label_singular: Block
+        widget: list
+        required: false
+        collapsed: auto
+        hint: Build the rest of the page from blocks. Use the **⋮** menu or drag the handle to reorder them.
+        types:
+          - name: image
+            label: Image
+            summary: 'Image — {{caption}}'
+            fields:
+              - { name: image, label: Image, widget: image }
+              - { name: alt, label: Image description, required: false }
+              - { name: caption, label: Caption, required: false }
+              - name: size
+                label: Size
+                widget: select
+                default: wide
+                options:
+                  - { label: 'Edge to edge (full screen width)', value: full }
+                  - { label: 'Page width', value: wide }
+                  - { label: 'Centred, smaller', value: medium }
+          - name: pair
+            label: Two images side by side
+            summary: 'Two images — {{caption_1}} {{caption_2}}'
+            fields:
+              - { name: image_1, label: Left image, widget: image }
+              - { name: caption_1, label: Left caption, required: false }
+              - { name: image_2, label: Right image, widget: image }
+              - { name: caption_2, label: Right caption, required: false }
+          - name: gallery
+            label: Image gallery
+            summary: 'Gallery'
+            fields:
+              - name: columns
+                label: Columns
+                widget: select
+                default: '3'
+                options:
+                  - { label: '2 columns', value: '2' }
+                  - { label: '3 columns', value: '3' }
+                  - { label: '4 columns', value: '4' }
+              - name: images
+                label: Images
+                label_singular: Image
+                widget: list
+                collapsed: auto
+                thumbnail: image
+                summary: '{{caption}}'
+                fields:
+                  - { name: image, label: Image, widget: image }
+                  - { name: alt, label: Image description, required: false }
+                  - { name: caption, label: Caption, required: false }
+          - name: text
+            label: Text
+            summary: 'Text — {{heading}}'
+            fields:
+              - { name: heading, label: Heading, required: false }
+              - { name: text, label: Text, widget: richtext }
+          - name: quote
+            label: Quote
+            summary: 'Quote — {{text | truncate(60)}}'
+            fields:
+              - { name: text, label: Quote, widget: text }
+              - { name: attribution, label: Source / author, required: false }
+          - name: video
+            label: Video
+            summary: 'Video — {{url}}'
+            fields:
+              - name: url
+                label: YouTube or Vimeo link
+                widget: string
+                type: url
+                hint: Paste the normal address of the video, e.g. `https://www.youtube.com/watch?v=…`
+              - { name: caption, label: Caption, required: false }
+      - name: links
+        label: Links
+        label_singular: Link
+        widget: list
+        required: false
+        collapsed: auto
+        summary: '{{label}}'
+        hint: Publications, award pages, competition boards, presentation files…
+        fields:
+          - { name: label, label: Link text }
+          - { name: url, label: Address (URL), widget: string, type: url }
+
+  # --------------------------------------------------------------- Research
+  - name: research
+    label: Research & writing
+    label_singular: Research entry
+    icon: menu_book
+    description: >-
+      Papers, theses, articles, essays and talks. The website lists them by year,
+      newest first.
+    folder: /src/content/research
+    extension: md
+    format: yaml-frontmatter
+    create: true
+    delete: true
+    slug: '{{slug}}'
+    identifier_field: title
+    summary: "{{title}}{{published | ternary('', ' — hidden')}}"
+    thumbnail: cover
+    sortable_fields:
+      fields: [year, title, type]
+      default:
+        field: year
+        direction: descending
+    preview_path: /research/{{slug}}/
+    view_filters:
+      - label: Hidden from website
+        field: published
+        pattern: false
+    fields:
+      - name: title
+        label: Title
+      - name: published
+        label: Show on website
+        widget: boolean
+        default: true
+        required: false
+      - name: type
+        label: Type
+        required: false
+        hint: For example `Paper`, `Thesis`, `Article`, `Essay`, `Book chapter`, `Talk`. Used for the filters on the Research page.
+      - name: year
+        label: Year
+        required: false
+      - name: authors
+        label: Authors
+        required: false
+        hint: For example `G. A. Sunny, J. Rahman`.
+      - name: publication
+        label: Published in
+        required: false
+        hint: Journal, conference, book, university or event.
+      - name: summary
+        label: Abstract / summary
+        widget: text
+        required: false
+      - name: cover
+        label: Cover image
+        widget: image
+        required: false
+      - name: cover_alt
+        label: Cover image description
+        required: false
+      - name: pdf
+        label: PDF file
+        widget: file
+        accept: .pdf,application/pdf
+        required: false
+        hint: Visitors get a button to open the PDF.
+      - name: link
+        label: External link
+        widget: string
+        type: url
+        required: false
+        hint: Journal page, DOI link, ResearchGate, Academia.edu…
+      - name: body
+        label: Full text or notes
+        widget: richtext
+        required: false
+
+  # ------------------------------------------------------------------ Pages
+  - name: pages
+    label: Pages
+    label_singular: Page
+    icon: web
+    description: Texts and images of each page of the website.
+    files:
+      # ---------------------------------------------------------- Home page
+      - name: home
+        label: Home page
+        icon: home
+        file: /src/content/pages/home.json
+        preview_path: /
+        fields:
+          - name: sections
+            label: Sections
+            label_singular: Section
+            widget: list
+            required: false
+            collapsed: true
+            hint: The home page is built from these sections, top to bottom. Add, remove or drag them into a new order.
+            types:
+              - name: slideshow
+                label: Slideshow
+                summary: 'Slideshow'
+                fields:
+                  - name: slides
+                    label: Slides
+                    label_singular: Slide
+                    widget: list
+                    collapsed: auto
+                    thumbnail: image
+                    summary: '{{title}}'
+                    fields:
+                      - name: project
+                        label: Link to project
+                        widget: relation
+                        collection: projects
+                        display_fields: ['{{title}}']
+                        search_fields: ['title']
+                        required: false
+                        hint: Optional. Empty image and title fields below are taken from this project.
+                      - { name: image, label: Image, widget: image, required: false }
+                      - { name: alt, label: Image description, required: false }
+                      - { name: title, label: Title, required: false }
+                      - { name: caption, label: Caption, required: false, hint: 'For example the location and year.' }
+                  - name: interval
+                    label: Seconds per slide
+                    widget: number
+                    value_type: int
+                    default: 6
+                    min: 2
+                    max: 30
+                    required: false
+                  - name: height
+                    label: Height
+                    widget: select
+                    default: large
+                    options:
+                      - { label: 'Full screen', value: full }
+                      - { label: 'Large', value: large }
+                      - { label: 'Medium', value: medium }
+              - name: statement
+                label: Statement
+                summary: 'Statement — {{text | truncate(60)}}'
+                fields:
+                  - { name: text, label: Text, widget: text, hint: 'A short introduction in large type.' }
+                  - { name: button_label, label: Link text, required: false, hint: 'For example `About me`' }
+                  - { name: button_link, label: Link address, required: false, hint: 'A page such as `/about` or a full address starting with `https://`' }
+              - name: projects
+                label: Selected projects
+                summary: 'Projects — {{heading}}'
+                fields:
+                  - { name: heading, label: Heading, required: false }
+                  - name: selection
+                    label: Projects to show
+                    widget: relation
+                    collection: projects
+                    display_fields: ['{{title}}']
+                    search_fields: ['title']
+                    multiple: true
+                    required: false
+                    hint: Choose and order the projects. Leave empty to show the first projects of your Work list.
+                  - name: limit
+                    label: Maximum number of projects
+                    widget: number
+                    value_type: int
+                    default: 6
+                    min: 1
+                    max: 24
+                    required: false
+                  - name: layout
+                    label: Layout
+                    widget: select
+                    default: staggered
+                    options:
+                      - { label: 'Two columns, staggered', value: staggered }
+                      - { label: 'Grid of three', value: grid }
+                  - { name: link_label, label: Link text, required: false, hint: 'For example `All work`. Leave empty to hide the link.' }
+              - name: research
+                label: Research & writing list
+                summary: 'Research — {{heading}}'
+                fields:
+                  - { name: heading, label: Heading, required: false }
+                  - name: selection
+                    label: Entries to show
+                    widget: relation
+                    collection: research
+                    display_fields: ['{{title}}']
+                    search_fields: ['title']
+                    multiple: true
+                    required: false
+                    hint: Leave empty to show the latest entries.
+                  - name: limit
+                    label: Maximum number of entries
+                    widget: number
+                    value_type: int
+                    default: 4
+                    min: 1
+                    max: 20
+                    required: false
+                  - { name: link_label, label: Link text, required: false, hint: 'Leave empty to hide the link.' }
+              - name: image
+                label: Large image
+                summary: 'Image — {{caption}}'
+                fields:
+                  - { name: image, label: Image, widget: image }
+                  - { name: alt, label: Image description, required: false }
+                  - { name: caption, label: Caption, required: false }
+                  - { name: link, label: Link address, required: false, hint: 'Optional. A page such as `/work` or a full address.' }
+              - name: text_image
+                label: Text with image
+                summary: 'Text with image — {{heading}}'
+                fields:
+                  - { name: heading, label: Heading, required: false }
+                  - { name: text, label: Text, widget: richtext, required: false }
+                  - { name: image, label: Image, widget: image, required: false }
+                  - { name: alt, label: Image description, required: false }
+                  - name: image_side
+                    label: Image position
+                    widget: select
+                    default: right
+                    options:
+                      - { label: 'Image on the right', value: right }
+                      - { label: 'Image on the left', value: left }
+                  - { name: button_label, label: Link text, required: false }
+                  - { name: button_link, label: Link address, required: false }
+              - name: contact
+                label: Contact prompt
+                summary: 'Contact — {{heading}}'
+                fields:
+                  - { name: heading, label: Heading }
+                  - { name: text, label: Text, widget: text, required: false }
+                  - { name: button_label, label: Button text, required: false }
+                  - { name: button_link, label: Button link, required: false, default: /contact }
+          - name: seo_title
+            label: Browser tab title (optional)
+            required: false
+            hint: Leave empty to use your name and role.
+          - name: seo_description
+            label: Description for Google and link previews (optional)
+            widget: text
+            required: false
+
+      # ---------------------------------------------------------- Work page
+      - name: work
+        label: Work page
+        icon: grid_view
+        file: /src/content/pages/work.json
+        preview_path: /work/
+        fields:
+          - { name: title, label: Page title }
+          - { name: intro, label: Introduction, widget: text, required: false }
+          - name: categories
+            label: Project categories
+            label_singular: Category
+            widget: list
+            required: false
+            hint: These appear as filters on the Work page, in this order. Assign them to projects in **Projects**.
+            fields:
+              - { name: name, label: Category name }
+          - name: show_filters
+            label: Show category filters
+            widget: boolean
+            default: true
+            required: false
+          - name: default_view
+            label: Default view
+            widget: select
+            default: grid
+            options:
+              - { label: 'Image grid', value: grid }
+              - { label: 'Text index (list)', value: index }
+          - name: labels
+            label: Words used on the Work and project pages
+            widget: object
+            collapsed: true
+            required: false
+            fields:
+              - { name: all, label: '"All" filter', default: All }
+              - { name: grid, label: 'Grid view button', default: Grid }
+              - { name: index, label: 'Index view button', default: Index }
+              - { name: empty, label: 'Message when there are no projects', default: 'Projects will appear here soon.' }
+              - { name: col_title, label: 'Index column: title', default: Project }
+              - { name: col_category, label: 'Index column: category', default: Category }
+              - { name: col_location, label: 'Index column: location', default: Location }
+              - { name: col_year, label: 'Index column: year', default: Year }
+              - { name: location, label: 'Project page: location', default: Location }
+              - { name: year, label: 'Project page: year', default: Year }
+              - { name: status, label: 'Project page: status', default: Status }
+              - { name: category, label: 'Project page: category', default: Category }
+              - { name: links, label: 'Project page: links heading', default: Links }
+              - { name: next, label: 'Project page: next project', default: Next project }
+              - { name: back, label: 'Project page: back to all work', default: All work }
+          - { name: seo_description, label: Description for Google (optional), widget: text, required: false }
+
+      # ------------------------------------------------------ Research page
+      - name: research
+        label: Research page
+        icon: menu_book
+        file: /src/content/pages/research.json
+        preview_path: /research/
+        fields:
+          - { name: title, label: Page title }
+          - { name: intro, label: Introduction, widget: text, required: false }
+          - name: show_filters
+            label: Show type filters
+            widget: boolean
+            default: true
+            required: false
+          - name: labels
+            label: Words used on the Research pages
+            widget: object
+            collapsed: true
+            required: false
+            fields:
+              - { name: all, label: '"All" filter', default: All }
+              - { name: empty, label: 'Message when there are no entries', default: 'Research and writing will appear here soon.' }
+              - { name: abstract, label: 'Abstract heading', default: Abstract }
+              - { name: authors, label: 'Authors label', default: Authors }
+              - { name: publication, label: 'Published in label', default: Published in }
+              - { name: type, label: 'Type label', default: Type }
+              - { name: year, label: 'Year label', default: Year }
+              - { name: pdf, label: 'PDF button', default: Read the PDF }
+              - { name: link, label: 'External link button', default: View publication }
+              - { name: back, label: 'Back link', default: All research }
+          - { name: seo_description, label: Description for Google (optional), widget: text, required: false }
+
+      # --------------------------------------------------------- About page
+      - name: about
+        label: About page
+        icon: person
+        file: /src/content/pages/about.json
+        preview_path: /about/
+        fields:
+          - { name: title, label: Page title }
+          - name: heading
+            label: Introduction in large type
+            widget: text
+            required: false
+          - { name: portrait, label: Portrait, widget: image, required: false }
+          - { name: portrait_alt, label: Portrait description, required: false }
+          - { name: portrait_caption, label: Portrait caption, required: false }
+          - { name: bio, label: Biography, widget: richtext, required: false }
+          - name: cv_file
+            label: CV (PDF)
+            widget: file
+            accept: .pdf,application/pdf
+            required: false
+            hint: When a file is added, a download button appears under the biography.
+          - { name: cv_label, label: CV button text, required: false, default: Download CV }
+          - name: sections
+            label: CV sections
+            label_singular: Section
+            widget: list
+            required: false
+            collapsed: auto
+            summary: '{{title}}'
+            hint: Education, experience, awards, exhibitions, publications, workshops… Add as many as you need.
+            fields:
+              - { name: title, label: Section title }
+              - name: entries
+                label: Entries
+                label_singular: Entry
+                widget: list
+                collapsed: auto
+                summary: '{{period}} {{title}}'
+                fields:
+                  - { name: period, label: Year or period, required: false, hint: 'For example `2019–2024` or `2023`' }
+                  - { name: title, label: Title, hint: 'Degree, position, award…' }
+                  - { name: subtitle, label: Institution / organisation, required: false }
+                  - { name: location, label: Location, required: false }
+                  - { name: description, label: Notes, widget: text, required: false }
+                  - { name: link, label: Link, widget: string, type: url, required: false }
+          - name: skills
+            label: Skills and languages
+            label_singular: Group
+            widget: list
+            required: false
+            collapsed: auto
+            summary: '{{title}}'
+            fields:
+              - { name: title, label: Group title, hint: 'For example `Software` or `Languages`' }
+              - { name: items, label: Items, widget: list }
+          - { name: seo_description, label: Description for Google (optional), widget: text, required: false }
+
+      # ------------------------------------------------------- Contact page
+      - name: contact
+        label: Contact page
+        icon: mail
+        file: /src/content/pages/contact.json
+        preview_path: /contact/
+        fields:
+          - { name: title, label: Page title }
+          - { name: heading, label: Heading in large type, widget: text, required: false }
+          - { name: intro, label: Introduction, widget: text, required: false }
+          - { name: image, label: Image (optional), widget: image, required: false }
+          - { name: image_alt, label: Image description, required: false }
+          - name: labels
+            label: Words used on the Contact page
+            widget: object
+            collapsed: true
+            required: false
+            fields:
+              - { name: email, label: 'Email label', default: Email }
+              - { name: phone, label: 'Phone label', default: Phone }
+              - { name: address, label: 'Address label', default: Address }
+              - { name: social, label: 'Social links label', default: Elsewhere }
+          - name: form
+            label: Contact form
+            widget: object
+            collapsed: true
+            required: false
+            hint: Optional. Needs a free form service such as Formspree — see the editing guide.
+            fields:
+              - { name: enabled, label: Show the contact form, widget: boolean, default: false, required: false }
+              - name: endpoint
+                label: Form address from your form service
+                widget: string
+                type: url
+                required: false
+                hint: For example `https://formspree.io/f/abcdwxyz`
+              - { name: heading, label: Form heading, required: false, default: Send a message }
+              - { name: name_label, label: '"Name" field', required: false, default: Name }
+              - { name: email_label, label: '"Email" field', required: false, default: Email }
+              - { name: message_label, label: '"Message" field', required: false, default: Message }
+              - { name: submit_label, label: Send button, required: false, default: Send }
+              - { name: success_message, label: Message after sending, required: false, default: 'Thank you — your message has been sent.' }
+              - { name: error_message, label: Message if sending fails, required: false, default: 'Sorry, something went wrong. Please email me directly.' }
+          - { name: seo_description, label: Description for Google (optional), widget: text, required: false }
+
+      # ------------------------------------------------------- 404 page
+      - name: not_found
+        label: Page not found (404)
+        icon: help
+        file: /src/content/pages/not-found.json
+        fields:
+          - { name: title, label: Heading, default: Page not found }
+          - { name: text, label: Text, widget: text, required: false }
+          - { name: button_label, label: Button text, required: false, default: Back to the home page }
+
+  # --------------------------------------------------------- Site settings
+  - name: settings
+    label: Site settings
+    label_singular: Setting
+    icon: settings
+    description: Your name, contact details, social links and the menu.
+    files:
+      - name: site
+        label: Name, contact & social links
+        icon: badge
+        file: /src/content/settings/site.json
+        fields:
+          - name: name
+            label: Full name
+            hint: Shown in the header, in browser tabs and in Google results.
+          - name: role
+            label: Role
+            required: false
+            hint: For example `Architect` or `Architect & Researcher`.
+          - name: location
+            label: Based in
+            required: false
+            hint: For example `Dhaka, Bangladesh`.
+          - name: header_text
+            label: Header text (optional)
+            required: false
+            hint: Text at the top left of every page. Leave empty to use your full name.
+          - name: logo
+            label: Logo image (optional)
+            widget: image
+            required: false
+            hint: Replaces the header text. A wide image with a transparent background works best.
+          - name: email
+            label: Email
+            widget: string
+            type: email
+            required: false
+          - name: phone
+            label: Phone
+            required: false
+          - name: address
+            label: Address
+            widget: text
+            required: false
+          - name: social
+            label: Social and professional links
+            label_singular: Link
+            widget: list
+            required: false
+            collapsed: auto
+            summary: '{{label}}'
+            fields:
+              - { name: label, label: Name, hint: 'For example `LinkedIn`, `Instagram`, `Behance`, `ResearchGate`' }
+              - { name: url, label: Address (URL), widget: string, type: url }
+          - name: description
+            label: Description for Google and link previews
+            widget: text
+            required: false
+            hint: One or two sentences about you. Pages without their own description use this one.
+          - name: share_image
+            label: Image for link previews
+            widget: image
+            required: false
+            hint: Shown when the website is shared on WhatsApp, LinkedIn, Facebook… Landscape, at least 1200 px wide.
+          - name: favicon
+            label: Browser tab icon (optional)
+            widget: image
+            required: false
+            hint: A square PNG, at least 192 × 192 px. Leave empty to use the default icon.
+          - name: footer_text
+            label: Footer text (optional)
+            widget: text
+            required: false
+            hint: For example an image credit or a short note.
+          - name: copyright
+            label: Copyright line (optional)
+            required: false
+            hint: Leave empty to show © [year] [your name].
+          - name: labels
+            label: General words
+            widget: object
+            collapsed: true
+            required: false
+            fields:
+              - { name: menu, label: 'Mobile menu button', default: Menu }
+              - { name: close, label: 'Close button', default: Close }
+              - { name: back_to_top, label: 'Back to top link', default: Back to top }
+              - { name: skip, label: 'Skip link (for keyboard users)', default: Skip to content }
+              - { name: previous, label: 'Previous button', default: Previous }
+              - { name: next, label: 'Next button', default: Next }
+              - { name: pause, label: 'Pause slideshow button (read aloud by screen readers)', default: Pause slideshow }
+              - { name: play, label: 'Play slideshow button (read aloud by screen readers)', default: Play slideshow }
+
+      - name: navigation
+        label: Menu
+        icon: menu
+        file: /src/content/settings/navigation.json
+        fields:
+          - name: items
+            label: Menu items
+            label_singular: Menu item
+            widget: list
+            summary: '{{label}}'
+            hint: The links at the top of every page, in this order.
+            fields:
+              - { name: label, label: Text }
+              - name: page
+                label: Links to
+                widget: select
+                default: work
+                options:
+                  - { label: Home page, value: home }
+                  - { label: Work page, value: work }
+                  - { label: Research page, value: research }
+                  - { label: About page, value: about }
+                  - { label: Contact page, value: contact }
+                  - { label: 'Other address (fill in below)', value: custom }
+              - name: url
+                label: Other address
+                widget: string
+                required: false
+                hint: Only used with "Other address" — e.g. `https://medium.com/@you` or `/uploads/portfolio.pdf`.

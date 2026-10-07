@@ -1,0 +1,77 @@
+---
+import ResearchRow from '../../components/ResearchRow.astro';
+import Base from '../../layouts/Base.astro';
+import { getResearch, getResearchPage } from '../../lib/content';
+import { slugify } from '../../lib/utils';
+
+const page = getResearchPage();
+const entries = await getResearch();
+const L = page.labels;
+
+const types = [...new Set(entries.map((entry) => entry.type).filter(Boolean))].map((name) => ({ name, slug: slugify(name) }));
+---
+
+<Base title={page.title} description={page.seoDescription || page.intro}>
+  <header class="wrap grid page-head">
+    <h1 class="display page-head__title">
+      {page.title}<sup class="page-head__count tabular">{entries.length}</sup>
+    </h1>
+    {page.intro && <p class="lead page-head__intro">{page.intro}</p>}
+  </header>
+
+  {
+    entries.length ? (
+      <section class="wrap" data-research>
+        {page.showFilters && types.length > 1 && (
+          <div class="toolbar">
+            <div class="chips" role="group" aria-label={L.type}>
+              <button class="chip" type="button" data-filter="all" aria-pressed="true">
+                {L.all}
+              </button>
+              {types.map((type) => (
+                <button class="chip" type="button" data-filter={type.slug} aria-pressed="false">
+                  {type.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <ul class="research-list">
+          {entries.map((entry) => (
+            <ResearchRow entry={entry} />
+          ))}
+        </ul>
+      </section>
+    ) : (
+      <p class="wrap lead">{L.empty}</p>
+    )
+  }
+</Base>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-research]');
+  if (root) {
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+    const items = [...root.querySelectorAll<HTMLElement>('[data-type]')];
+    let filter = new URLSearchParams(window.location.search).get('type') ?? 'all';
+    if (!buttons.some((button) => button.dataset.filter === filter)) filter = 'all';
+
+    const apply = () => {
+      buttons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.filter === filter)));
+      items.forEach((item) => (item.hidden = filter !== 'all' && item.dataset.type !== filter));
+      const query = new URLSearchParams(window.location.search);
+      if (filter === 'all') query.delete('type');
+      else query.set('type', filter);
+      const search = query.toString();
+      history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}`);
+    };
+
+    buttons.forEach((button) =>
+      button.addEventListener('click', () => {
+        filter = button.dataset.filter ?? 'all';
+        apply();
+      }),
+    );
+    if (buttons.length) apply();
+  }
+</script>

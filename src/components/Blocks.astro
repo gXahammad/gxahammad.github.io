@@ -1,0 +1,110 @@
+---
+// The "Images and content" blocks of a project page, in the order set in the editor.
+import Img from './Img.astro';
+import type { Block } from '../lib/content';
+import { renderMarkdown } from '../lib/markdown';
+
+interface Props {
+  blocks: Block[];
+}
+
+const { blocks } = Astro.props;
+const items = await Promise.all(
+  blocks.map(async (block) => (block.type === 'text' ? { ...block, html: await renderMarkdown(block.text) } : block)),
+);
+
+const WIDE = '(min-width: 1920px) 1824px, 94vw';
+const MEDIUM = '(min-width: 1920px) 1200px, (min-width: 900px) 62vw, 94vw';
+const HALF = '(min-width: 1920px) 900px, (min-width: 760px) 46vw, 94vw';
+const columnSizes = (columns: number) =>
+  `(min-width: 1920px) ${Math.round(1824 / columns)}px, (min-width: 1100px) ${Math.round(94 / columns)}vw, (min-width: 480px) 46vw, 94vw`;
+---
+
+<div class="blocks">
+  {
+    items.map((block) => {
+      switch (block.type) {
+        case 'image':
+          return block.size === 'full' ? (
+            <figure class="block-image--full reveal" data-zoom data-caption={block.caption}>
+              <div class="media">
+                <Img src={block.image} alt={block.alt} sizes="100vw" />
+              </div>
+              {block.caption && (
+                <figcaption class="wrap">
+                  <p class="caption">{block.caption}</p>
+                </figcaption>
+              )}
+            </figure>
+          ) : (
+            <div class="wrap">
+              <figure class={`block-image--${block.size} reveal`} data-zoom data-caption={block.caption}>
+                <div class="media">
+                  <Img src={block.image} alt={block.alt} sizes={block.size === 'medium' ? MEDIUM : WIDE} />
+                </div>
+                {block.caption && <figcaption class="caption">{block.caption}</figcaption>}
+              </figure>
+            </div>
+          );
+        case 'pair':
+          return (
+            <div class="wrap block-pair">
+              {block.items.map((item) => (
+                <figure class="reveal" data-zoom data-caption={item.caption}>
+                  <div class="media">
+                    <Img src={item.image} alt={item.alt || item.caption} sizes={HALF} />
+                  </div>
+                  {item.caption && <figcaption class="caption">{item.caption}</figcaption>}
+                </figure>
+              ))}
+            </div>
+          );
+        case 'gallery':
+          return (
+            <div class="wrap block-gallery" style={`--cols: ${block.columns}`}>
+              {block.images.map((item) => (
+                <figure class="reveal" data-zoom data-caption={item.caption}>
+                  <div class="media">
+                    <Img src={item.image} alt={item.alt || item.caption} sizes={columnSizes(block.columns)} widths={[400, 640, 900, 1200, 1600]} />
+                  </div>
+                  {item.caption && <figcaption class="caption">{item.caption}</figcaption>}
+                </figure>
+              ))}
+            </div>
+          );
+        case 'text':
+          return (
+            <section class="wrap grid block-text reveal">
+              {block.heading && <h2 class="h3 block-text__heading">{block.heading}</h2>}
+              {block.html && <div class="prose" set:html={block.html} />}
+            </section>
+          );
+        case 'quote':
+          return (
+            <figure class="wrap grid block-quote reveal">
+              <blockquote class="block-quote__text">{block.text}</blockquote>
+              {block.attribution && <figcaption class="meta block-quote__by">{block.attribution}</figcaption>}
+            </figure>
+          );
+        case 'video':
+          return (
+            <figure class="wrap block-video reveal">
+              <div class="block-video__frame">
+                <iframe
+                  src={block.embed}
+                  title={block.caption || 'Video'}
+                  loading="lazy"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowfullscreen
+                  referrerpolicy="strict-origin-when-cross-origin"
+                ></iframe>
+              </div>
+              {block.caption && <figcaption class="caption">{block.caption}</figcaption>}
+            </figure>
+          );
+        default:
+          return null;
+      }
+    })
+  }
+</div>

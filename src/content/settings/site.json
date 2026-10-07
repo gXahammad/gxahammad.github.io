@@ -1,0 +1,31 @@
+{
+  "name": "Golam Ahammad Sunny",
+  "role": "Architect",
+  "location": "Dhaka, Bangladesh",
+  "header_text": "",
+  "logo": "",
+  "email": "hello@example.com",
+  "phone": "",
+  "address": "Dhaka, Bangladesh",
+  "social": [
+    {
+      "label": "LinkedIn",
+      "url": "https://www.linkedin.com/in/golam-ahammad-sunny-5950912ba/"
+    }
+  ],
+  "description": "Golam Ahammad Sunny is an architect based in Dhaka, Bangladesh. Selected projects, drawings, research and writing.",
+  "share_image": "/uploads/courtyard-house-axonometric.webp",
+  "favicon": "",
+  "footer_text": "",
+  "copyright": "",
+  "labels": {
+    "menu": "Menu",
+    "close": "Close",
+    "back_to_top": "Back to top",
+    "skip": "Skip to content",
+    "previous": "Previous",
+    "next": "Next",
+    "pause": "Pause slideshow",
+    "play": "Play slideshow"
+  }
+}

@@ -1,0 +1,195 @@
+---
+import Arrow from '../components/Arrow.astro';
+import Img from '../components/Img.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import ResearchRow from '../components/ResearchRow.astro';
+import Slideshow from '../components/Slideshow.astro';
+import Base from '../layouts/Base.astro';
+import { getAboutPage, getHomePage, getProjects, getResearch, getSite, pickItems } from '../lib/content';
+import { renderMarkdown } from '../lib/markdown';
+import { imageAt } from '../lib/media';
+import { isExternal, url } from '../lib/utils';
+
+const site = getSite();
+const home = getHomePage();
+const projects = await getProjects();
+const research = await getResearch();
+
+const sections = await Promise.all(
+  home.sections.map(async (section) =>
+    section.type === 'text_image' ? { ...section, html: await renderMarkdown(section.text) } : { ...section, html: '' },
+  ),
+);
+
+const portrait = await imageAt(getAboutPage().portrait, 800);
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  ...(site.role && { jobTitle: site.role }),
+  url: new URL(url('/'), Astro.site).href,
+  ...(portrait && { image: new URL(portrait.src, Astro.site).href }),
+  ...(site.location && { address: { '@type': 'PostalAddress', addressLocality: site.location } }),
+  ...(site.email && { email: `mailto:${site.email}` }),
+  ...(site.social.length && { sameAs: site.social.map((link) => link.url) }),
+};
+
+const WIDE = '(min-width: 1920px) 1824px, 94vw';
+const linkAttrs = (href: string) => (isExternal(href) ? { target: '_blank', rel: 'noopener' } : {});
+---
+
+<Base fullTitle={home.seoTitle || undefined} description={home.seoDescription} jsonLd={person}>
+  <h1 class="sr-only">{site.role ? `${site.name}, ${site.role}` : site.name}</h1>
+
+  {
+    sections.map((section, i) => {
+      const first = i === 0;
+      switch (section.type) {
+        case 'slideshow':
+          return <Slideshow section={section} projects={projects} />;
+
+        case 'statement':
+          return (
+            <section class:list={['wrap statement', { 'statement--first': first }]}>
+              <p class="statement__text reveal">{section.text}</p>
+              {section.buttonLabel && section.buttonLink && (
+                <a class="arrow-link statement__link reveal" href={url(section.buttonLink)} {...linkAttrs(section.buttonLink)}>
+                  {section.buttonLabel}
+                  <Arrow dir={isExternal(section.buttonLink) ? 'up-right' : 'right'} />
+                </a>
+              )}
+            </section>
+          );
+
+        case 'projects': {
+          const items = pickItems(projects, section.selection, section.limit);
+          if (!items.length) return null;
+          const head = (
+            <div class="section-head">
+              {section.heading ? <h2 class="section-head__title">{section.heading}</h2> : <span></span>}
+              {section.linkLabel && (
+                <a class="arrow-link" href={url('/work/')}>
+                  {section.linkLabel}
+                  <Arrow />
+                </a>
+              )}
+            </div>
+          );
+          return section.layout === 'grid' ? (
+            <section class:list={['wrap section', { 'section--first': first }]}>
+              {head}
+              <div class="card-grid">
+                {items.map((project) => (
+                  <ProjectCard project={project} sizes="(min-width: 1100px) 30vw, (min-width: 600px) 46vw, 92vw" />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section class:list={['wrap section', { 'section--first': first }]}>
+              {head}
+              <div class="stagger">
+                <div class="stagger__col">
+                  {items
+                    .map((project, n) => ({ project, n }))
+                    .filter(({ n }) => n % 2 === 0)
+                    .map(({ project, n }) => (
+                      <ProjectCard project={project} order={n} sizes="(min-width: 640px) 45vw, 92vw" />
+                    ))}
+                </div>
+                <div class="stagger__col">
+                  {items
+                    .map((project, n) => ({ project, n }))
+                    .filter(({ n }) => n % 2 === 1)
+                    .map(({ project, n }) => (
+                      <ProjectCard project={project} order={n} sizes="(min-width: 640px) 45vw, 92vw" />
+                    ))}
+                </div>
+              </div>
+            </section>
+          );
+        }
+
+        case 'research': {
+          const items = pickItems(research, section.selection, section.limit);
+          if (!items.length) return null;
+          return (
+            <section class:list={['wrap section', { 'section--first': first }]}>
+              <div class="section-head section-head--flush">
+                {section.heading ? <h2 class="section-head__title">{section.heading}</h2> : <span></span>}
+                {section.linkLabel && (
+                  <a class="arrow-link" href={url('/research/')}>
+                    {section.linkLabel}
+                    <Arrow />
+                  </a>
+                )}
+              </div>
+              <ul class="research-list research-list--flush">
+                {items.map((entry) => (
+                  <ResearchRow entry={entry} />
+                ))}
+              </ul>
+            </section>
+          );
+        }
+
+        case 'image': {
+          const picture = (
+            <div class="media">
+              <Img src={section.image} alt={section.alt} sizes={WIDE} />
+            </div>
+          );
+          return (
+            <figure class:list={['wrap section home-image reveal', { 'section--first': first }]}>
+              {section.link ? (
+                <a href={url(section.link)} {...linkAttrs(section.link)}>
+                  {picture}
+                </a>
+              ) : (
+                picture
+              )}
+              {section.caption && <figcaption class="caption">{section.caption}</figcaption>}
+            </figure>
+          );
+        }
+
+        case 'text_image':
+          return (
+            <section class:list={['wrap grid section text-image', `text-image--${section.imageSide}`, { 'section--first': first }]}>
+              {section.image && (
+                <div class="text-image__media media reveal">
+                  <Img src={section.image} alt={section.alt} sizes="(min-width: 900px) 50vw, 94vw" />
+                </div>
+              )}
+              <div class="text-image__text reveal">
+                {section.heading && <h2 class="display-2">{section.heading}</h2>}
+                {section.html && <div class="prose" set:html={section.html} />}
+                {section.buttonLabel && section.buttonLink && (
+                  <a class="arrow-link" href={url(section.buttonLink)} {...linkAttrs(section.buttonLink)}>
+                    {section.buttonLabel}
+                    <Arrow dir={isExternal(section.buttonLink) ? 'up-right' : 'right'} />
+                  </a>
+                )}
+              </div>
+            </section>
+          );
+
+        case 'contact':
+          return (
+            <section class:list={['wrap section home-contact reveal', { 'section--first': first }]}>
+              <h2 class="display-2 home-contact__heading">{section.heading}</h2>
+              {section.text && <p class="lead home-contact__text">{section.text}</p>}
+              {section.buttonLabel && (
+                <a class="button home-contact__button" href={url(section.buttonLink)} {...linkAttrs(section.buttonLink)}>
+                  {section.buttonLabel}
+                  <Arrow dir={isExternal(section.buttonLink) ? 'up-right' : 'right'} />
+                </a>
+              )}
+            </section>
+          );
+
+        default:
+          return null;
+      }
+    })
+  }
+</Base>

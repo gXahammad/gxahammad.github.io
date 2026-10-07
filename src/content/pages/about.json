@@ -1,0 +1,99 @@
+{
+  "title": "About",
+  "heading": "Architect based in Dhaka, working across buildings, drawings and research.",
+  "portrait": "/uploads/portrait-placeholder.webp",
+  "portrait_alt": "Portrait of Golam Ahammad Sunny",
+  "portrait_caption": "",
+  "bio": "Golam Ahammad Sunny is an architect based in Dhaka, Bangladesh. His work spans houses, housing, cultural and educational buildings, with a particular interest in climate, material and the everyday life of the city.\n\nAlongside practice he writes and researches on courtyards, brick and building with water. He holds a Bachelor of Architecture; his thesis proposed a floating community centre for river-island settlements.",
+  "cv_file": "/uploads/cv-placeholder.pdf",
+  "cv_label": "Download CV",
+  "sections": [
+    {
+      "title": "Education",
+      "entries": [
+        {
+          "period": "2016–2021",
+          "title": "Bachelor of Architecture (B.Arch)",
+          "subtitle": "University name",
+          "location": "Dhaka, Bangladesh",
+          "description": "Thesis: Living with Water — a floating community centre for char settlements.",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "title": "Experience",
+      "entries": [
+        {
+          "period": "2022–now",
+          "title": "Architect",
+          "subtitle": "Studio name",
+          "location": "Dhaka, Bangladesh",
+          "description": "Residential and cultural projects from concept design to construction.",
+          "link": ""
+        },
+        {
+          "period": "2021–2022",
+          "title": "Junior architect",
+          "subtitle": "Practice name",
+          "location": "Dhaka, Bangladesh",
+          "description": "",
+          "link": ""
+        },
+        {
+          "period": "2020",
+          "title": "Architectural intern",
+          "subtitle": "Practice name",
+          "location": "Dhaka, Bangladesh",
+          "description": "",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "title": "Awards & competitions",
+      "entries": [
+        {
+          "period": "2023",
+          "title": "Shortlisted entry — River Pavilion",
+          "subtitle": "Competition name",
+          "location": "",
+          "description": "",
+          "link": ""
+        },
+        {
+          "period": "2022",
+          "title": "Honourable mention — Monsoon School",
+          "subtitle": "Competition name",
+          "location": "",
+          "description": "",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "title": "Workshops & exhibitions",
+      "entries": [
+        {
+          "period": "2023",
+          "title": "Brick and climate — design workshop",
+          "subtitle": "Organiser name",
+          "location": "Dhaka, Bangladesh",
+          "description": "",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "title": "Software",
+      "items": ["AutoCAD", "Revit", "Rhino", "Grasshopper", "SketchUp", "Lumion", "V-Ray", "Photoshop", "Illustrator", "InDesign"]
+    },
+    {
+      "title": "Languages",
+      "items": ["Bangla — native", "English — fluent"]
+    }
+  ],
+  "seo_description": ""
+}

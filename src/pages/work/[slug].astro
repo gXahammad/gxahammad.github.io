@@ -1,0 +1,151 @@
+---
+import Arrow from '../../components/Arrow.astro';
+import Blocks from '../../components/Blocks.astro';
+import Img from '../../components/Img.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import Base from '../../layouts/Base.astro';
+import { getProjects, getSite, getWorkPage, type Project } from '../../lib/content';
+import { renderMarkdown } from '../../lib/markdown';
+import { imageAt } from '../../lib/media';
+import { slugify, url } from '../../lib/utils';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((project, i) => ({
+    params: { slug: project.slug },
+    props: { project, next: projects.length > 1 ? projects[(i + 1) % projects.length] : null },
+  }));
+}
+
+interface Props {
+  project: Project;
+  next: Project | null;
+}
+
+const { project: p, next } = Astro.props;
+const site = getSite();
+const page = getWorkPage();
+const L = page.labels;
+const body = await renderMarkdown(p.body);
+
+const facts = [
+  [L.location, p.location],
+  [L.year, p.year],
+  [L.status, p.status],
+  [L.category, p.categories.join(', ')],
+  ...p.facts.map((fact) => [fact.label, fact.value]),
+].filter(([, value]) => value);
+
+const cover = await imageAt(p.cover, 1200);
+const work = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: p.title,
+  ...(p.summary && { description: p.summary }),
+  ...(cover && { image: new URL(cover.src, Astro.site).href }),
+  ...(p.location && { locationCreated: { '@type': 'Place', name: p.location } }),
+  creator: { '@type': 'Person', name: site.name },
+  url: new URL(Astro.url.pathname, Astro.site).href,
+};
+---
+
+<Base title={p.title} description={p.summary} image={p.cover} type="article" jsonLd={work}>
+  <article>
+    <header class="wrap project-head">
+      <p class="crumbs">
+        <a href={url('/work/')}>{page.title}</a>
+        {
+          p.categories.length > 0 && (
+            <>
+              <span aria-hidden="true">/</span>
+              <span>
+                {p.categories.map((category, i) => (
+                  <>
+                    {i > 0 && ', '}
+                    <a class="crumbs__sub" href={url(`/work/?category=${slugify(category)}`)}>
+                      {category}
+                    </a>
+                  </>
+                ))}
+              </span>
+            </>
+          )
+        }
+      </p>
+      <h1 class="display project-head__title">{p.title}</h1>
+      {p.summary && <p class="lead project-head__lead">{p.summary}</p>}
+    </header>
+
+    {
+      p.cover && (
+        <figure class="wrap project-cover" data-zoom data-caption="">
+          <div class="media">
+            <Img src={p.cover} alt={p.coverAlt} sizes="(min-width: 1920px) 1824px, 94vw" priority />
+          </div>
+        </figure>
+      )
+    }
+
+    {
+      facts.length > 0 && (
+        <dl class="wrap facts">
+          {facts.map(([label, value]) => (
+            <div class="fact">
+              <dt class="eyebrow">{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+
+    {
+      body && (
+        <div class="wrap grid project-body">
+          <div class="prose" set:html={body} />
+        </div>
+      )
+    }
+
+    {p.blocks.length > 0 && <Blocks blocks={p.blocks} />}
+
+    {
+      p.links.length > 0 && (
+        <section class="wrap grid project-links">
+          <h2 class="eyebrow project-links__title">{L.links}</h2>
+          <ul class="project-links__list">
+            {p.links.map((link) => (
+              <li>
+                <a class="arrow-link" href={link.url} target="_blank" rel="noopener">
+                  {link.label}
+                  <Arrow dir="up-right" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <nav class="wrap project-nav" aria-label={L.next}>
+      {
+        next && (
+          <a class="next-project" href={url(`/work/${next.slug}/`)}>
+            <span class="next-project__text">
+              <span class="eyebrow">{L.next}</span>
+              <span class="display-2 next-project__title">{next.title}</span>
+            </span>
+            <span class="next-project__media media media--cover">
+              <Img src={next.cardImage || next.cover} sizes="(min-width: 760px) 26vw, 40vw" widths={[400, 640, 900]} />
+            </span>
+          </a>
+        )
+      }
+      <a class="arrow-link project-nav__back" href={url('/work/')}>
+        <Arrow dir="left" />
+        {L.back}
+      </a>
+    </nav>
+  </article>
+  <Lightbox />
+</Base>

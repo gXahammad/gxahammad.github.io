@@ -1,0 +1,40 @@
+# Builds the site and publishes it to GitHub Pages.
+# Runs on every push to main, which includes every "Save" in the website editor,
+# so changes are live a minute or two after saving.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; saves made in quick succession are queued.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+      - name: Install, build and upload the site
+        uses: withastro/action@v6
+        # Optimised images are cached between runs, so only new uploads are processed.
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

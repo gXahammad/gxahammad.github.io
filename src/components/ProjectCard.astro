@@ -1,0 +1,37 @@
+---
+import Img from './Img.astro';
+import type { Project } from '../lib/content';
+import { slugify, url } from '../lib/utils';
+
+interface Props {
+  project: Project;
+  /** How wide the card is on screen, passed on to the image. */
+  sizes: string;
+  headingLevel?: 2 | 3;
+  /** Position in the original list, used to restore order on small screens. */
+  order?: number;
+}
+
+const { project: p, sizes, headingLevel = 3, order } = Astro.props;
+const Heading = headingLevel === 2 ? 'h2' : 'h3';
+const widths = [400, 640, 900, 1200, 1600];
+---
+
+<a
+  class="card reveal"
+  href={url(`/work/${p.slug}/`)}
+  data-categories={p.categories.map(slugify).join(' ')}
+  style={order === undefined ? undefined : `--order: ${order}`}
+>
+  <div class="card__media media media--cover">
+    <Img src={p.cardImage || p.cover} sizes={sizes} widths={widths} />
+    {p.cardImageHover && <Img src={p.cardImageHover} sizes={sizes} widths={widths} class="card__alt" />}
+  </div>
+  <div class="card__body">
+    <div>
+      <Heading class="card__title">{p.title}</Heading>
+      {p.location && <p class="card__sub">{p.location}</p>}
+    </div>
+    {p.year && <p class="card__year">{p.year}</p>}
+  </div>
+</a>

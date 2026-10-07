@@ -1,0 +1,137 @@
+---
+import Arrow from '../components/Arrow.astro';
+import Img from '../components/Img.astro';
+import Base from '../layouts/Base.astro';
+import { getContactPage, getSite } from '../lib/content';
+import { telHref } from '../lib/utils';
+
+const site = getSite();
+const page = getContactPage();
+const L = page.labels;
+const form = page.form;
+const hasAside = form.enabled || Boolean(page.image);
+---
+
+<Base title={page.title} description={page.seoDescription || page.intro || page.heading}>
+  <section class="wrap grid contact">
+    <div class:list={['contact__main', { 'contact__main--full': !hasAside }]}>
+      <h1 class="eyebrow contact__title">{page.title}</h1>
+      {page.heading && <p class="display-2 contact__heading">{page.heading}</p>}
+      {page.intro && <p class="lead contact__intro">{page.intro}</p>}
+
+      <dl class="contact__list">
+        {
+          site.email && (
+            <div class="contact__item">
+              <dt class="eyebrow">{L.email}</dt>
+              <dd>
+                <a class="contact__email underline" href={`mailto:${site.email}`}>
+                  {site.email}
+                </a>
+              </dd>
+            </div>
+          )
+        }
+        {
+          site.phone && (
+            <div class="contact__item">
+              <dt class="eyebrow">{L.phone}</dt>
+              <dd>
+                <a class="underline" href={telHref(site.phone)}>
+                  {site.phone}
+                </a>
+              </dd>
+            </div>
+          )
+        }
+        {
+          site.address && (
+            <div class="contact__item">
+              <dt class="eyebrow">{L.address}</dt>
+              <dd class="pre-line">{site.address}</dd>
+            </div>
+          )
+        }
+        {
+          site.social.length > 0 && (
+            <div class="contact__item">
+              <dt class="eyebrow">{L.social}</dt>
+              <dd>
+                <ul class="contact__social">
+                  {site.social.map((link) => (
+                    <li>
+                      <a class="arrow-link" href={link.url} target="_blank" rel="noopener">
+                        {link.label}
+                        <Arrow dir="up-right" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+          )
+        }
+      </dl>
+    </div>
+
+    {
+      hasAside && (
+        <div class="contact__aside">
+          {page.image && (
+            <div class="media contact__image">
+              <Img src={page.image} alt={page.imageAlt} sizes="(min-width: 900px) 36vw, 94vw" widths={[480, 800, 1200, 1600]} />
+            </div>
+          )}
+          {form.enabled && (
+            <form class="form" action={form.endpoint} method="post" data-contact-form>
+              <h2 class="h3">{form.heading}</h2>
+              <label class="form__field">
+                <span class="eyebrow">{form.name_label}</span>
+                <input type="text" name="name" autocomplete="name" required />
+              </label>
+              <label class="form__field">
+                <span class="eyebrow">{form.email_label}</span>
+                <input type="email" name="email" autocomplete="email" required />
+              </label>
+              <label class="form__field">
+                <span class="eyebrow">{form.message_label}</span>
+                <textarea name="message" rows="6" required></textarea>
+              </label>
+              <input class="form__trap" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
+              <button class="button form__submit" type="submit">
+                {form.submit_label}
+                <Arrow />
+              </button>
+              <p class="form__status meta" role="status" data-success={form.success_message} data-error={form.error_message}></p>
+            </form>
+          )}
+        </div>
+      )
+    }
+  </section>
+</Base>
+
+<script>
+  // Sends the form without leaving the page; falls back to a normal submit without JavaScript.
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const status = form.querySelector<HTMLElement>('.form__status');
+    const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      form.reset();
+      if (status) status.textContent = status.dataset.success ?? '';
+    } catch {
+      if (status) status.textContent = status.dataset.error ?? '';
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+</script>

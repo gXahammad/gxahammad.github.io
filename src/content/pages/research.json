@@ -1,0 +1,18 @@
+{
+  "title": "Research",
+  "intro": "Papers, essays and academic work on courtyards, brick and building with water.",
+  "show_filters": true,
+  "labels": {
+    "all": "All",
+    "empty": "Research and writing will appear here soon.",
+    "abstract": "Abstract",
+    "authors": "Authors",
+    "publication": "Published in",
+    "type": "Type",
+    "year": "Year",
+    "pdf": "Read the PDF",
+    "link": "View publication",
+    "back": "All research"
+  },
+  "seo_description": ""
+}
